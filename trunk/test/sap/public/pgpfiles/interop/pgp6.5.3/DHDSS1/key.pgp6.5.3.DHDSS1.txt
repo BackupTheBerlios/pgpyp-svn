@@ -1,0 +1,12 @@
+"pgp6.5.3 DHDSS1"
+ID: 0x9E70A580
+Type: DH/DSS
+Size: 2048/1024
+Created: 8/8/2003
+Expires: Never
+Cipher: CAST
+Fingerprint: 3291 EDDB 588D 6A39 FE48  0EC8 6DF3 1F86 9E70 A580
+
+Created with PGP 6.5.3 on Windows 2000 Pro
+
+Passphrase: test

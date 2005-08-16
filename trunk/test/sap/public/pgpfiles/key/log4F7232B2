@@ -1,0 +1,56 @@
+Command> key 4F7232B2
+                      
+pub  1024D/9AC13CFC  created: 2003-07-06 expires: never      trust: u/u
+sub  1024g/B8246578  created: 2003-07-06 expires: never
+sub  1024g/8A3BAAE8  created: 2003-07-06 expires: never
+sub  1024R/4A595CEE  created: 2003-07-06 expires: never
+sub* 1024g/686B6E9A  created: 2003-07-06 expires: never
+sub  1024R/372C2D26  created: 2003-07-06 expires: never
+sub  1024D/4F7232B2  created: 2003-07-06 expires: never
+(1). test2 (test many subkeys) <test2@test2.test2>
+ 
+Command> revkey 4F7232B2
+Do you really want to revoke this key? y
+Please select the reason for the revocation:
+  0 = No reason specified
+  1 = Key has been compromised
+  2 = Key is superseded
+  3 = Key is no longer used
+  Q = Cancel
+Your decision? 0
+Enter an optional description; end it with an empty line:
+>
+Reason for revocation: No reason specified
+(No description given)
+Is this okay? y
+                
+You need a passphrase to unlock the secret key for
+user: "test2 (test many subkeys) <test2@test2.test2>"
+1024-bit DSA key, ID 9AC13CFC, created 2003-07-06
+ 
+                   
+pub  1024D/9AC13CFC  created: 2003-07-06 expires: never      trust: u/u
+sub  1024g/B8246578  created: 2003-07-06 expires: never
+sub  1024g/8A3BAAE8  created: 2003-07-06 expires: never
+sub  1024R/4A595CEE  created: 2003-07-06 expires: never
+sub  1024g/686B6E9A  created: 2003-07-06 expires: never
+rev! subkey has been revoked: 2003-10-05
+sub  1024R/372C2D26  created: 2003-07-06 expires: never
+sub  1024D/4F7232B2  created: 2003-07-06 expires: never
+(1). test2 (test many subkeys) <test2@test2.test2>
+ 
+Command> list
+              
+pub  1024D/9AC13CFC  created: 2003-07-06 expires: never      trust: u/u
+sub  1024g/B8246578  created: 2003-07-06 expires: never
+sub  1024g/8A3BAAE8  created: 2003-07-06 expires: never
+sub  1024R/4A595CEE  created: 2003-07-06 expires: never
+sub  1024g/686B6E9A  created: 2003-07-06 expires: never
+rev! subkey has been revoked: 2003-10-05
+sub  1024R/372C2D26  created: 2003-07-06 expires: never
+sub  1024D/4F7232B2  created: 2003-07-06 expires: never
+(1). test2 (test many subkeys) <test2@test2.test2>
+ 
+Command> quit
+Save changes? y
+

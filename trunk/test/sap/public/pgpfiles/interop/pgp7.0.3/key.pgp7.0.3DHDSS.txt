@@ -1,0 +1,10 @@
+"DHDSS1"
+ID: 0x7441604A
+Type: DH/DSS
+Size: 2048/1024
+Created: 8/8/2003
+Expires: Never
+Cipher: CAST
+Fingerprint: 49D1 B143 2435 20D6 8E01  6368 1760 A8DE 7441 604A
+
+Created with PGP 7.0.3 on Windows 2000 Pro

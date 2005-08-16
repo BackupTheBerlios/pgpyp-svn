@@ -1,0 +1,13 @@
+"pgp8.0.2 DHDSS1"
+
+ID: 0xF5805DAB
+Type: DH/DSS
+Size: 2048/1024
+Created: 8/14/2003
+Expires: Never
+Cipher: AES-256
+Fingerprint: 4015 E538 DD1C 1D8F E494  038D FB9F C76A F580 5DAB
+
+Passphrase: test
+
+Created on Windows 2000 Pro, PGP 8.0.2

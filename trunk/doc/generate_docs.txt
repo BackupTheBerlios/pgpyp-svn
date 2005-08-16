@@ -1,0 +1,30 @@
+HOWTO generate documentation
+============================
+
+Generating source documentation with Epydoc
+-------------------------------------------
+1. Install Epydoc (http://epydoc.sf.net). 
+
+2. Run the following:: 
+
+    epydoc --html \
+           -o PATH/TO/NEW/DOCS \
+           -n OpenPGP \
+           -c green \
+           --docformat=restructuredtext \
+           PATH/TO/PACKAGE
+
+HTML-izing support documentation with Docutils
+----------------------------------------------
+1. Install Docutils (http://docutils.sf.net).
+
+2. Run the following::
+
+    buildhtml.py -g -s -d -t \
+                 --toc-entry-backlinks \
+                 --toc-top-backlinks \
+                 --footnote-backlinks \
+                 PATH/TO/SUPPORT/DOCS
+
+3. Then move all the new HTML files wherever you want them.
+

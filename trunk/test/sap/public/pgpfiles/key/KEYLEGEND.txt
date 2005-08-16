@@ -1,0 +1,50 @@
+
+--------------------------------------------------------------------------
+"DSAELG1" passphrase='test'
+
+DSA & El Gamal
+never expires
+
+gpg (GnuPG) 1.2.2
+
+pub  1024D/CC079DF3 2003-07-05 Tester (Test Comment) <test@test.test>
+     Key fingerprint = 4D04 CE1D 89B4 995C 26F8  5E62 0CFC 2B6D CC07 9DF3
+sub  1024g/A1F2BEF6 2003-07-05
+--------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------
+ 
+
+DSA & El Gamal
+never expires
+
+pub  1024D/9AC13CFC 2003-07-06 test2 (test many subkeys) <test2@test2.test2>
+     Key fingerprint = 6C0D 002F 4068 724B 5DCC  F7BC 6246 EF31 9AC1 3CFC
+sub  1024g/B8246578 2003-07-06
+then added.. El Gamal, 1024:
+sub  1024g/8A3BAAE8  created: 2003-07-06 expires: never 
+then added.. RSA, encrypt only, 1024:
+sub  1024R/4A595CEE  created: 2003-07-06 expires: never
+then added.. El Gamal, 1024:
+sub  1024g/686B6E9A  created: 2003-07-06 expires: never
+then added two keys for signing (RSA & DSA), both 1024:
+sub  1024R/372C2D26  created: 2003-07-06 expires: never
+sub  1024D/4F7232B2  created: 2003-07-06 expires: never
+--------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------
+"keyC" created with PGP 7.0.3 on Win2K
+verified id 0x7914a7f0 first on Windows... then imported locally:
+pub  1024D/7914A7F0 2003-07-07 test3 <test3@test3.test3>
+sub  2048g/8B156A2E 2003-07-07
+--------------------------------------------------------------------------
+
+--------------------------------------------------------------------------
+"nopass"
+pub  1024D/6AAD669C 2003-07-11 nopass <nopass@nopass.nopass>
+Key fingerprint = 246D BA3D C01E D3F4 9353  6638 52B2 BFD0 6AAD 669C
+--------------------------------------------------------------------------
+      
+

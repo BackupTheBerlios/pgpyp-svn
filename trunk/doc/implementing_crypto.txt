@@ -1,0 +1,258 @@
+Return to the implementation `OVERVIEW`_.
+
+.. _OVERVIEW: ./OVERVIEW.html
+
+==============
+OpenPGP crypto
+==============
+
+.. contents:: Contents
+
+Signing
+=======
+
+From rfc2440 5.2: "A signature packet describes a binding between some public
+key and some data. The most common signatures are a signature of a file or a
+block of text, and a signature that is a certification of a user ID."
+
+Signature packets basically encapsulate three things: 
+    
+    - a signature `type` which communicates the intent of the signature; what
+      the signature is actually signing, what information is being verified,
+      what assertion is being made
+    - public MPIs (multi-precision integes) used to verify the validity of the
+      signature against a particular public key (the crypto stuff)
+    - miscellaneous attributes (or subpackets) giving more information about
+      the nature of the signature
+
+Key ID Resolution
+-----------------
+Version 3 signatures require key IDs but do not enforce the validity of them.
+Key IDs are optional in version 4 signatures and their validity may either be
+enforced or not (by virtue of being in either the hashed or unhashed group of
+subpackets). Further, there is no restriction on the number of times a Key ID
+may appear as a subpacket in a version 4 signature.
+
+ID resolution goes like this:
+
+    - a version 3 ID is mandatory and is set accordingly
+    - a signature cannot verify against two keys, so the first v4 hashed ID
+      will be used
+    - if no v4 hashed ID is found, the first unhashed ID is used
+
+Signature Types
+---------------
+Each signature has type code that is used to determine the context of the
+signature.  See rfc2440 5.2.1 for details.
+
++------+-----------------+--------------------------------------------+------+
+| Type | Constant        |              Signature Type                | Type |
++======+=================+============================================+======+
+| 0x00 | SIG_BINARY      | signature of a binary document             | 0x00 |
++------+-----------------+--------------------------------------------+------+
+| 0x01 | SIG_TEXT        | signature of a canonical text document     | 0x01 |
++------+-----------------+--------------------------------------------+------+
+| 0x02 | SIG_STANDALONE  | standalone signature                       | 0x02 |
++------+-----------------+--------------------------------------------+------+
+| 0x10 | SIG_GENERIC     | generic certification of user ID and       | 0x10 |
+|      |                 | public key                                 |      |
++------+-----------------+--------------------------------------------+------+
+| 0x11 | SIG_PERSONA     | persona certification of a user ID and     | 0x11 |
+|      |                 | public key                                 |      |
++------+-----------------+--------------------------------------------+------+
+| 0x12 | SIG_CASUAL      | casual certification of a user ID and      | 0x12 |
+|      |                 | public key                                 |      |
++------+-----------------+--------------------------------------------+------+
+| 0x13 | SIG_POSITIVE    | positive certification of a user ID and    | 0x13 |
+|      |                 | public key                                 |      |
++------+-----------------+--------------------------------------------+------+
+| 0x18 | SIG_SUBKEYBIND  | signature over subkey signature binding it | 0x18 |
+|      |                 | to the primary key                         |      |
++------+-----------------+--------------------------------------------+------+
+| 0x1F | SIG_DIRECT      | signature binding subpackets to key        | 0x1F |
++------+-----------------+--------------------------------------------+------+
+| 0x20 | SIG_KEYREVOC    | revocation signature over target key       | 0x20 |
++------+-----------------+--------------------------------------------+------+
+| 0x28 | SIG_SUBKEYREVOC | revocation signature over target subkey    | 0x28 |
++------+-----------------+--------------------------------------------+------+
+| 0x30 | SIG_CERTREVOC   | revocation of sig types 0x10-0x13, 0x1F    | 0x30 |
++------+-----------------+--------------------------------------------+------+
+| 0x40 | SIG_TIMESTAMP   | signed timestamp                           | 0x40 |
++------+-----------------+--------------------------------------------+------+
+| 0x50 | SIG_3RDPARTY    | third-party confirmation signature         | 0x50 |
++------+-----------------+--------------------------------------------+------+
+
+Signature Subpackets
+--------------------
+Version 4 signatures include "subpackets" which store various kinds of
+information about the key. These subpackets are found as list items in the
+``hashed_subpkts`` and ``unhashed_subpkts`` attributes of a version 4 signature
+instance ``body``.
+
++---------------------+--------------------------------------------+------+
+| Constant            |               Subpacket Value              | Type |
++=====================+============================================+======+
+| SIGSUB_CREATED      | integer signature creation timestamp       |  2   |
++---------------------+--------------------------------------------+------+
+| SIGSUB_EXPIRES      | integer signature expiration timestamp     |  3   |
++---------------------+--------------------------------------------+------+
+| SIGSUB_EXPORTABLE   | integer (0 or 1) indicating exportable or  |  4   |
+|                     | "public" certification                     |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_TRUST        | tuple of (level, amount) integers stating  |  5   |
+|                     | degree of key trustworthiness              |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_REGEX        | string trust regular expression modifier   |  6   |
++---------------------+--------------------------------------------+------+
+| SIGSUB_REVOCABLE    | integer (0 or 1) indicating future         |  7   |
+|                     | revocability: 0~non-revocable for life     |      |
+|                     | of public key                              |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_KEYEXPIRES   | integer key expiration timestamp           |  9   |
++---------------------+--------------------------------------------+------+
+| SIGSUB_PLACEHOLDER  | placeholder for backward compatibility     |  10  |
++---------------------+--------------------------------------------+------+
+| SIGSUB_SYMALGS      | list of integer keys for preferred         |  11  |
+|                     | symmetric key algorithms                   |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_REVOKER      | tuple (integer class, integer public key   |  12  |
+|                     | algorithm ID/constant, string fingerprint) |      |
+|                     | where the fingerprint is in caps hex       |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_SIGNERID     | string (caps hex) ID of signing public key |  16  |
++---------------------+--------------------------------------------+------+
+| SIGSUB_NOTATION     | list of tuples of (flag, name, value)      |  20  |
+|                     | notation data where flag is an integer     |      |
+|                     | and name, value are strings                |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_HASHALGS     | list of integer keys for preferred hash    |  21  |
+|                     | algorithms                                 |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_COMPALGS     | list of integer keys for preferred         |  22  |
+|                     | compression algorithms                     |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_KEYSERVPREFS | list of integer flags of key server        |  23  |
+|                     | preferences                                |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_KEYSERV      | string URL of preferred key server         |  24  | 
++---------------------+--------------------------------------------+------+
+| SIGSUB_PRIMARYUID   | integer (0 or 1) indicating a primary user |  25  | 
+|                     | ID                                         |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_POLICYURL    | string URL of document describing          |  26  | 
+|                     | signature issuance policy                  |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_KEYFLAGS     | list of integer key flags                  |  27  | 
++---------------------+--------------------------------------------+------+
+| SIGSUB_SIGNERUID    | string comprising signer's user id         |  28  | 
++---------------------+--------------------------------------------+------+
+| SIGSUB_REVOCREASON  | tuple (integer, string) reason for         |  29  | 
+|                     | revocation                                 |      |
++---------------------+--------------------------------------------+------+
+| SIGSUB_FEATURES     | list of integer feature flags              |  30  | 
++---------------------+--------------------------------------------+------+
+| SIGSUB_SIGTARGET    | TODO                                       |  31  | 
++---------------------+--------------------------------------------+------+
+
+
+Encryption
+==========
+
+OpenPGP encryption takes place in three places:
+
+    1. Secret key values (the secret counterpart to the public key) are
+       normally encrypted. When encrypted they use a symmetric key algorithm.
+    2. Encrypted messages (the bulk of what you'd receive in an encrypted
+       email, for instance) are also encrypted with a symmetric key algorithm.
+    3. Session keys (the actual keys used to decrypt the encrypted messages
+       above) can be encrypted using a public key or symmetric key algorithm.
+
+'Cryption Quirks
+----------------
+
++---------------------+-----+--------+------------+--------------------------+
+| Information Type    | IV  |Prefix  |   Quirks   |       Verification       |
++=====================+=====+========+============+==========================+
+| secret key material |given|maybe   |resync after| 16-bit checksum on MPIs  |
+|     (version 3)     |     |        |MPI value   | (lengths and values)     |
++---------------------+-----+--------+------------+--------------------------+
+| secret key material |given|maybe   |            | 16-bit checksum on MPIs, |
+|     (version 4)     |     |        |            | optional SHA1 hash       |
++---------------------+-----+--------+------------+--------------------------+
+| symmetrically       |all  |block+2 |resync after| for last prefix byte n,  |
+| encrypted data      |0x00 |        |verification| (n, n-1) == (n-2, n-3)   |
++---------------------+-----+--------+------------+--------------------------+
+| symmetrically       |     |        |            | for last prefix byte n,  |
+| encrypted,          |all  |block+2 |            | (n, n-1) == (n-2, n-3)   |
+| integrity protected |0x00 |        |            | and use of modification  |
+| data                |     |        |            | detection (see below)    |
++---------------------+-----+--------+------------+--------------------------+
+
+Secret Key Material, Version 3
+``````````````````````````````
+- Use a specified IV.
+- Data is optionally prefixed with a (given) salt.
+- 'Cryption is performed only on MPI integer data (*not* MPI length headers,
+  which are skipped over).
+- The CFB process is resynced (or "restarted") after each string of MPI integer
+  value has been 'crypted (skipping the next two bytes of MPI length header if
+  there is another MPI following).
+- A cleartext 16-bit checksum of all the MPI data (length headers plus integer
+  values) is used to verify the correctness of the MPI data.
+
+Secret key material, Version 4
+``````````````````````````````
+- Use a specified IV.
+- Data is optionally prefixed with a (given) salt.
+- 'Cryption is performed over all MPI data (length headers and integer values)
+  and verfication data as an unbroken string.
+- Verification data is either a 16-bit checksum (older, deprecated) or a SHA-1
+  hash (newer, appreciated) of the MPI data.
+
+Symmetrically Encrypted Data
+````````````````````````````
+- Use an all-zero (0x00) IV.
+- For cipher block size BS, data is prefixed with BS + 2 bytes. The first BS
+  bytes are random, and 'byte(BS-1), byte(BS) == byte(BS+1), byte(BS+2)'.
+- The verification of the prefix condition above is used to ensure that the
+  proper key was used for decryption.
+- After verification, the CFB mechanism is "resynced" by using the bytes in the
+  range (2, BS+2) as the new IV and restarting 'cryption the next BS bytes
+  following the prefix (that is, the begining of the actual data).
+
+Symmetrically Encrypted, Integrity Protected Data
+`````````````````````````````````````````````````
+- Use an all-zero (0x00) IV.
+- For cipher block size BS, data is prefixed with BS + 2 bytes. The first BS
+  bytes are random, and 'byte(BS-1), byte(BS) == byte(BS+1), byte(BS+2)'.
+- The verification of the prefix condition above is used to ensure that the
+  proper key was used for decryption.
+- After verification, CFB 'cryption continues normally, no resync is required.
+- Decrypted cleartext will contain a modification detection packet that is used
+  to verify that the encrypted data was not modified in transit.
+
+'Cryption 'rhythms
+------------------
+The journey of a public key encrypted message like this:
+
+    1. A random, hopefully non-repeatable, key is generated and used to encrypt
+       a message (#2) using a symmetric key algorithm.
+    2. That key is then encrypted with a public key algorithm using the
+       receiver's public key values to produce a session key (#3 above).
+    3. The encrypted session key and encrypted message are sent to the receiver.
+    4. The receiver must temporarily decrypt the secret values in his secret
+       key (#1 above). Normally this requires a passphrase.
+    5. Assuming the passphrase was correct, the secret key values are now known
+       to the OpenPGP program and will be used to automatically decrypt the
+       session key (#2 above).
+    6. If the (symmetric) session key is successfully decrypted, it is
+       automatically used to decrypt the encrypted message.
+
+PGP's CFB
+---------
+All encryption in OpenPGP is done using cipher-feedback (CFB). The number of
+bits per CFB shift and the size of the feedback register (and therefore the
+length of the initialization vector) are equal to the cipher's block size. As a
+matter of course, these are all defined in terms of bytes, not bits (because
+OpenPGP packets define section lengths in terms of octets).
+

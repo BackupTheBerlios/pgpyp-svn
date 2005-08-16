@@ -1,0 +1,19 @@
+"pgp6.5.3RSA1"
+ID: 0x04500D4D
+Type: RSA
+Size: 2048
+Created: 8/8/2003
+Expires: Never
+Cipher: IDEA
+Fingerprint: F992 1DF7 42D4 8923  0757 8EF7 10B3 00C8
+
+Created with PGP 6.5.3 on Windows 2000 Pro
+
+Passphrase: test
+
+Durnit.. The ASCII-armored signature wound up being signed by some
+other key (6DF31F869E70A580), so I renamed it to
+
+    sig.cleartext.notepad.pgp6.5.3.RSA1.asc.busted
+
+..bummer.

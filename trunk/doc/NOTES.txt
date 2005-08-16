@@ -1,0 +1,604 @@
+Return to the implementation `OVERVIEW`_.
+
+.. _OVERVIEW: ./OVERVIEW.html
+
+====================
+Implementation notes
+====================
+
+.. contents:: Contents
+
+Fingerprints and IDs: Internal Quirks
+=====================================
+According to rfc2440 11.2, fingerprints are 16 bytes (MD5) for v3 keys and 20
+bytes (SHA1) for v4 keys. Both versions have 8 byte IDs. "Visually," keys and
+IDs are represented as an unbroken string of upper case hex pairs (per
+character in the key). These strings are also used internally for key and id
+attributes. The reason was because test cases were easier write by just being
+able to type out a hex string and compare it to the actual instance attribute
+than it would have been to convert one or the other to or from a more readable,
+typeable format. This means that printing the key or id or comparing a user's
+manual hex string doesn't require any formatting. This comes at the expense of
+storing these attributes at twice their actual length: a 20-byte fingerprint is
+stored as the 40-byte hex string representation of it, and key IDs are actually
+16 bytes long instead of eight.
+
+Packet parsing
+==============
+The intent is that in learning more about PEAK, the more I can learn how to
+abstract the "element" representations - that is, to have packet classes with
+attributes that can be read in different ways.. from a string, a file, or a 
+stream (network or otherwise).
+
+file_obj.seek(0, 2) sends you to the end of the file.
+
+Read some more PEAK. Cuz like should define the class/interface/whatevers
+for packets that can go on and on.. like
+
+pkt.body.data
+pkt.body.data.read() for data stream..
+
+or.. all attributes support read() & readstr() methods to get the meaninful
+stuff or the actual stuff. Can do this to wrap strings, files, and sockets?
+
+and maybe write() writestr()
+
+packet.read()
+
+
+Signature Subpacket Critical Bits
+=================================
+"Bit 7 of the subpacket type is the "critical" bit (5.2.3.1). If set, it
+denotes that the subpacket is one that is critical for the evaluator of the
+signature to recognize.  If a subpacket is encountered that is marked critical
+but is unknown to the evaluating software, the evaluator SHOULD consider the
+signature to be in error."
+
+http://www.imc.org/ietf-openpgp/mail-archive/msg02793.html says that in fact
+bits 6 -> 0 are used to calculate the subpacket type, and that it just so
+happens that the critical bit hasn't been defined yet.
+
+Signatures on "non-messages"
+============================
+Standalone signatures and third-party confirmation signatures seem to work only
+in packet sequences that don't conform to an OpenPGP message pattern:
+
+    - the standalone signature is a single signature packet
+
+    - third party confirmation sigs are "sigs on sigs," and I don't know
+      this is constructed as an OpenPGP message (SIG + SIG)?
+
+crypto.signature errors
+=======================
+As much as I like error messages, there aren't really any in crypto.signature.
+GnuPG has warnings for bad sigs, but everything basically boils down to "bad
+hash." Once a signature alg is working, well, it's all about the hash.
+Therefore, the integrity of this is totally dependent on the test cases, and
+any normal error that doesn't raise anything funky should be understood as a
+generic "bad hash."
+
+GnuPG signature verification
+============================
+GnuPG likes armored signatures made in binary mode, but does not like armored
+signature messages made in text mode. It does like clearsigned messages (in
+text mode of course) and does respect (require) the mandatory Hash: XXXX
+header.
+
+So for now, signature creation works like this: without armoring, the signature
+is made in binary, with armoring and without clearsig the signature is made in
+binary, and if clearsigned, the signature is made in text.
+
+Quibbles: Don't like the hash header requirement because it prevents free-willy
+lists of signatures on the same message (or forces them to use the same hash?).
+Since there isn't any explicit "end" to the clearsigned message (begin..end),
+it seems like it'd be OK to append multiple signatures if need be (each one
+taking up their own BEGIN SIGNATURE..END SIGNATURE block).
+
+GnuPG foreign subkey revocation?
+================================
+How to revoke a subkey with a foreign key in gpg? Selecting subkeys in
+--edit-key and doing 'addrevoker' only added a direct signature to the
+primary key granting primary revocation permission, and explicitly sending
+the subkey ID to --desig-revoke still caused the revocation to be directed
+toward the primary key. Also, 'addrevoker' goes by user ID and grants
+permission to the primary foreign key.
+
+Forcing a subkey of the revoker to create the revocation using
+"--default-key subkeyID/fprint" to use still uses the primary key to
+create the signature.
+
+According to the draft, this is probably a "by convention" sort of thing.
+
+Signature Soup 
+==============
+
+Shorthand
+---------
+    
+    - HASH(something): "apply the HASH function to 'something'"
+    - MSG: OpenPGP message, as defined in 10.2
+    - +: concatenate
+    - .: aspect, attribute, or component of. Ex: KEY.iv means
+      "the 8 octet IV contained in the body of the KEY packet"
+    - PKT: generic packet
+    - LIT: literal data packet
+    - SIG: signature packet
+
+Message-friendly (10.2) Signature Types
+---------------------------------------
+
+    0x00 (BINARY), 0x01 (TEXT), and 0x40 (TIMESTAMP)
+    
+
+    These are the (only?) signatures which actually apply to
+    OpenPGP messages as defined in section 10.2.
+
+    From 5.2.4: "..the document itself is the data." Here, 'data'
+    means the entire packet data for messages other than literal
+    messages (represented below as `MSG`). In the case of literal
+    messages consisting of a single literal data packet, the
+    'data' is the "remainder of the packet" (5.9) - that is, the
+    data that following the format, filename, and length sections
+    in the literal data packet body. For literal messages made up
+    of more than one literal packet, the signature is calculated
+    over the concatenated literal data sections in order of their
+    appearance in the literal data packet list.
+
+    The timestamp signature (0x40) is an alias for the binary
+    signature (0x00) that places "extra weight" on the time at
+    which the data was signed.
+    
+    - See http://www.imc.org/ietf-openpgp/mail-archive/msg03969.html
+
+    Hash context compositions for signed messages:
+
+        - non-literal messages::
+        
+            HASH(MSG + SIG.hashed_data)
+
+        - literal messages, single literal packet::
+        
+            HASH(LIT.data + SIG.hashed_data)
+
+        - literal messages, multiple literal packets::
+        
+            HASH(LIT1.data + LIT2.data + SIG.hashed_data)
+
+Signatures on Packets
+---------------------
+
+    Most signature types apply themselves to individual packets
+    that do not in and of themselves constitute a bona fide
+    message (according to 10.2).
+
+Signatures in Key Messages (10.1)
+---------------------------------
+
+    'key block' - section in a key message comprised of a
+        block leader and it's signatures (certifcations and
+        revocations)
+
+    'block leader' - primary key, user IDs, user attributes,
+        and subkeys
+
+    Many packet signatures are found only in key messages (or
+    "transferable public key" messages, 10.1) as
+    certifications and revocations in key blocks following
+    block leaders. A 'block' is defined as a leader (see
+    above) followed by zero or more signature packets. The
+    order of the signature packets following the leader is
+    irrelevant and they must all be reconciled to determine
+    the status of the leader. In other words, a certification
+    signature following a user ID packet in its respective
+    block must be verified to assert the signer's claim. In
+    addition, the other packets in the same block must be
+    examined in case a revocation from the same signer was
+    issued. When the timestamps of such a revocation signature
+    and the initial certification signature are reconciled,
+    the status of the user ID (with respect to one particular
+    signer) is known.
+
+    UserID/Attribute Certifications
+
+        0x10 (GENERIC), 0x11 (PERSONA), 0x12 (CASUAL), and
+        0x13 (POSITIVE)
+
+        These four signature types are found in key blocks
+        following user ID and user attribute packets. They
+        represent a "degree of certainty" asserted by the
+        signer that the user ID or attribute does in fact
+        represent the owner or controller of the primary
+        public key leading the public key message.
+
+        Hash context compositions for signature packet SIG, key
+        packet KEY, user id packet UID, and user attribute
+        packet ATTR:
+
+           version 3 certification signatures (applicable only
+           to user IDs)::
+            
+                HASH(0x99 + 2 octet KEY.body_length + KEY.body_data +
+                     UID + SIG.hashed_data)
+
+           version 4 user ID certification signatures::
+
+                HASH(0x99 + 2 octet KEY.body_length + KEY.body_data +
+                     0xb4 + 4 octet UID.length + UID.body_data + SIG.hashed_data)
+
+           version 4 user attribute certification signatures::
+
+                HASH(0x99 + 2 octet KEY.body_length + KEY.body_data +
+                     0xd1 + 4 octet ATTR.length + ATTR.body_data + SIG.hashed_data)
+
+    Subkey Bindings
+
+        0x18 (SUBKEYBIND)
+
+        Subkey blocks consist of a subkey and at least one
+        signature binding it to the primary [signing] key. Again,
+        because there may be another signature in the same block
+        revoking this binding, all the signatures must be examined
+        and verified before the status of the subkey can be
+        determined.
+        
+        Hash context composition binding the data in subkey packet
+        SUBKEY to the primary signing key packet KEY with
+        signature packet SIG::
+        
+            HASH(0x99 + 2 octet KEY.body_length + KEY.body_data +
+                 0x99 + 2 octet SUBKEY.body_length +
+                 SUBKEY.body_data + SIG.hashed_data)
+
+    Key Revocations
+
+        0x20 (KEYREVOC) and 0x28 (SUBKEYREVOC)
+
+        Revocation signatures are found in key blocks following
+        the primary signing key and any of its subkeys.
+
+        Hash context composition revoking primary key KEY
+
+        HASH
+
+    Certification revocations
+
+        0x30 CERTREVOC
+
+    Key
+
+        Ox1F DIRECT
+    
+No clue
+-------
+
+    0x02 STANDALONE
+    
+        Single packets don't constitute an OpenPGP message (10.2)
+        
+    0x50 3RDPARTY
+    
+        Sigs on sig pkt(s)? Signature packets (or
+        lists of them) don't constitute a message.
+
+(0x1F): Signature directly on a key
+    
+    Since this "binds the information in the signature subpackets
+    to the key," I assume that this is not appropriate for binding
+    key block leaders to the primary key.
+
+    "This signature is calculated directly on a key.  It binds the
+    information in the signature subpackets to the key, and is
+    appropriate to be used for subpackets that provide information
+    about the key, such as the revocation key subpacket. It is also
+    appropriate for statements that non-self certifiers want to make
+    about the key itself, rather than the binding between a key and
+    a name."
+
+(0x30): Certification revocation signature
+
+    I'm assuming that this signature is over the same data that
+    the target certification-to-revoke used, reasons being the
+    need to emphasize timestamp comparisons and the explicit
+    statement that type 0x50 "is a signature over some other
+    OpenPGP signature(s)."
+
+(0x40): Timestamp signature.
+
+    Does this pre-date v3 sigs? ..v3's all have timestamps and
+    v4's are all potential timestamp sigs thanks to the creation
+    subpacket. Perhaps this is just an attention grabber - 
+    something like, "I'm a standalone-ish signature that really
+    wants to show off my timestamp"? Do v4 timestamp signatures
+    with subpackets other than that for creation violate the "only
+    meaningful for the timestamp contained" intent?
+
+ASCII-Armored Quirks
+====================
+
+- I could care less about the headers since they're not protected
+  by anything, and all the information that's needed must be in
+  the packets anyway. This will change when I worry about
+  multiparts and non-standard encoding.
+- The "title" or "header lines" are really inconsequential but
+  may be used as a quick filter.
+- list_armored() decodes the armored data automatically, which
+  sort of defeats the purpose of any "quick filtering." But it
+  needs to do this to check the data and checksum to return only
+  good Armored instances.
+
+Signed Message Distinctions
+===========================
+
+Right now, signed messages exit as native OpenPGP packets, ASCII-armored packets, and the clearsigned mix of cleartext and
+ASCII-armored signature packets. Lone signature packets (which are
+technically not messages) can be found in either native or
+ASCII-armored form. The deal is this - on the ASCII-armored level,
+we still don't really know what the armored data makes up. So in
+order do distinguish one type of message from another:
+
+    - Figure out if the messages are ASCII-armored.
+    - If they are, use list_armored() to get a bunch of Armored
+      instances.
+
+      - For each Armored instance, check if it has a 'signed'
+        attribute - this tells us that we have a clearsigned
+        instance.
+      - If there is no 'signed' attribute, then it's a normal
+        Armored instance.
+
+    - If they aren't, use list_pkts() to see what we've got.
+
+Certification Verification/Revocation
+=====================================
+
+Quirks, baby, quirks. Certification revocation hashes are not
+spelled out in the documentation. You'd think that if a
+certification is a signature and a revocation is a signature then
+a certification revocation would be a signature on a signature.
+You'd be wrong.
+
+- look in sig soup for binding/certifying signature, note
+  signing key IDs
+- look in sig soup for revocation signatures, compare signing
+  key IDs with those for binding/certifying
+- if a match is found,
+
+    - if binding/certifying sig is v4 w/non-revocable subpacket, 
+      ignore revocations, leader is good (but issue some warning
+      or notice)
+    - otherwise compare timestamps
+
+      - if revocation is newer, leader is no good
+      - if revocation is older, leader is good (but issue some
+        warning or notice)
+
+Signatures that are not in a particular block's soup are, with
+respect to the block leader, completely ignored. I'm not going to
+search an entire message for a misplaced signature or revocation.
+
+Public/Secret/Stored Key Message Class
+======================================
+
+I'm using the entire packet in key blocks. This is necessary to
+avoid a kludgey re-lookup in `_seq` to determine the difference
+between a user ID and attribute - and it seems wrong to play an
+attribute guessing game or add some other meta-info for this
+purpose alone.
+
+Also, it will help eliminate mysteries if everything on the lower
+level becomes packet-centered.
+ 
+Credos
+======
+
+- Embrace the packet.body. Learn to love packet.body. Major
+  functions like verify/decrypt should work with packets as their
+  smallest unit of OpenPGP information.
+
+- Embrace MPI.value. It's where real the value lies.
+
+- If "just do," shove it down (to packet/message/util). If "must
+  think," push it up (to an API). No in-between. In-between get
+  smushed. Just like frog.
+
+Private key bindings
+====================
+
+The bindings in private key messages generated by GnuPG do not
+verify against the primary key in that private key message, but
+they do verify against the public key ..that is, they verify
+against the public portion of the key. 5.2.4 (paragraph 3) just
+states that the 'body of the key packet' is hashed. This should
+be changed to 'the public portion of the key packet body'.
+
+Key message signature addition/verification
+===========================================
+
+GnuPG will issue a detached revocation certificate for a primary key, 
+and importing that certificate will add the signature packet to the
+primary key block. Fine. However, without specifying the target key to
+revoke an assumption is being made that it is revoking itself (which
+will normally be the case). What if we want to issue detached signatures
+that revoke a foreign key? This doesn't seem to be possible with basic
+gpg commands, and may only be available in --edit-key.
+
+Point is (whether --edit-key allows this or not), it seems a luxury that
+some detached signatures can be applied (and by extension, verified)
+automatically while the bulk of key certifications are done on the key
+itself. Therefore the default method to verify something that applies to
+a key message is to verify it in the context of the key message itself.
+In other words, you should mean it if you do it because thy will be done -
+except sometimes, when the implementation is nice enough to leave it
+up to you later.
+
+Key binding and revocation restrictions
+=======================================
+
+Right now (bis08), the following rules apply to key/subkey binding
+and revocation:
+
+    - (11.1) The primary key block consists of revocations (0x20)
+      and direct key sigs (0x1F)
+
+    - (11.1) The subkey block consists of revocations (0x28) and
+      bindings (0x18)
+
+    - (5.2.1) A valid certification revocation nullifies
+      signature types 0x10-13 and 0x1F.
+
+Therefore:
+
+    - external revocation permission for a primary key must be
+      given in a direct key sig (0x1F)
+
+    - external revocation permission for a subkey must be given
+      in a binding sig (0x18)
+
+Apparently:
+
+    - Explicit revocation of revocation permission is not possible
+      for a primary key because certifcation revocations are not
+      included in the primary key block (10.1, 11.1). If they
+      were (and timestamps concurred), one could be used to
+      revoke the direct key signature which granted permission to
+      the outside revoker.
+
+    - Explicit revocation of revocation permission is not possible
+      for a subkey because of either/both:
+    
+        - No signature type is explicitly authorized to revoke
+          revocations.
+
+        - If certifcation revocations could revoke the
+          revocation, they are still not included in the subkey
+          block (10.1, 11.1)
+
+Result? Verified revocations are final. The only way to invalidate
+revocation permission is to eliminate or replace the packets
+granting the permission.
+
+Holes & Leaks
+=============
+Reporting on unassigned (no key ID) signatures. From the output, one can infer
+that a verified signature was unassigned. Should this be transparent?
+
+MDCs and Problems with Undefined Packet Lengths
+===============================================
+Encountered:
+
+  - Compressed or literal packets (messages) with undefined lengths in a
+    symmetrically-encrypted integrity protected packet. Those packets "want" to
+    read to EOF, but must be forced to respect the existence of the MDC packet.
+
+How to solve this one? Best thing I can think of is to assume a 20+2 MDC packet
+at the end of the decrypted body of the integrity protected data and count
+backwards. But for any other version of an MDC that isn't 22 octets, we're
+gonna have to do some weird searches. That's nuts.
+
+Solution? Right now the 20+2/SHA1 requirement for MDC is "hard-coded" into the
+description of the symmetrically encrypted integrity protected packet. As long
+as versions for this packet *and* MDC packets are updated together, then the
+"backwards" counting situation will not be a problem. The problem (if we have
+to live with undefined lengths) comes in when one version of the integrity
+protected packet accomodates MDC packets with non-uniform lengths.
+
+PyCrypto Stuff
+==============
+PyCrypto's public key decryption methods require integer (tuple) inputs but its
+encryption methods output string tuples.
+
+Generic Signature Concerns
+==========================
+For a given message M and signature S made by secret key S(a), it may be
+"relatively easy" to generate public key values P(b) and a possibly even a
+secret key S(b) which verify S for M. This is why there is a push to add
+signing key identification to the signature itself, and to bind parents to
+their signing subkeys. Signatures are therefore (currently) a good way to check
+for *endorsements*, keeping in mind that multiple keys may subscribe to a
+single endorsement.
+
+Key Soup
+========
+
+The goal is to organize
+
+Basic key structure::
+
+    Primary-Key
+        [Revocation Self Signature]
+        [Direct Key Self Signature...]
+    User ID
+        [Signature ...]
+    [User ID [Signature ...] ...]
+    [User Attribute [Signature ...] ...]
+    [[Subkey
+        [Binding-Signature-Revocation]
+        Primary-Key-Binding-Signature
+     ]
+    ...]
+
+
+For each key block,
+
+    Is leader bound to primary (self-signature)?
+        No -> REJECT, Yes -> continue.
+
+    Is expired? Yes -> remember, No -> continue
+
+Signed messages
+===============
+Signed messages are packet sequences that pair a signature (signature packet)
+with a signed message (some other sequence of packets which comprise a valid
+OpenPGP message). This module uses ``find_signed_msg()`` to produce a
+``SignedMsg`` instance [from the beginning of] a list of packets (if in fact a
+valid signed message exists). The basic packet sequences supported are::
+
+    SIGNATURE, MESSAGE  and  ONE-PASS, MESSAGE, SIGNATURE
+    SIGNATURE, (SIGNATURE, (SIGNATURE, MESSAGE))
+    ONE-PASS, (ONE-PASS, MESSAGE, SIGNATURE), SIGNATURE
+    ONE-PASS, (SIGNATURE, MESSAGE), SIGNATURE   ..etc.
+
+The following signature types are not supported:
+
+    - self-signatures (lone signature packets)
+    - signatures on a signature (where a lone signature packet acts like a
+      complete message)
+    - key-specific signatures (user ID and attribute certifications, subkey
+      signatures, and revocations ..see PublicKeyMsg)
+
+One-pass signatures
+===================
+A series of one-pass signatures in a single message, whether they are nested or
+not, looks like this (for a series of 3 one-pass signatures)::
+
+    ONE-PASS, ONE-PASS, ONE-PASS, MSG, SIG, SIG, SIG
+
+..which follows the pattern ONE-PASS, MSG, SIG for various one-pass sequences
+in MSG, rendering the entire sequence (as well as each "inner sequence") a
+valid message according to 10.2.
+
+However, depending on the nested-ness of each one-pass packet the composition
+of a message at a given level is different. For example, using ``n=0`` to
+indicate non-nestedness and ``n=1`` to indicate nestedness::
+
+    ONE-PASS_A(n=0), ONE-PASS_B(n=1), MSG, SIG_B, SIG_A
+
+..means that (because one-pass signatures A & B are non-nested) both signatures
+A and B apply to message MSG. These five packets define a single signed message
+with two signers (A & B). This means that the sequence above is equivalent to::
+
+    ONE-PASS_B(n=0), ONE-PASS_A(n=1), MSG, SIG_A, SIG_B
+
+this with::
+
+    ONE-PASS_A(n=1), ONE-PASS_B(n=1), MSG, SIG_B, SIG_A
+
+..which means that signature A (with n=1) is applied to the entire combination
+ONE-PASS_B(n=1), MSG, SIG_B. In this case, the sequence of five packets defines
+a signed message with only one signer.
+
+No signature/key ID convenience in signed messages
+==================================================
+The ``SignedMsg`` class does not have a convenient dictionary
+targetID:signature mapping because of the possibility of multiple signatures
+with no specified targets.

@@ -1,0 +1,199 @@
+Return to the implementation `OVERVIEW`_.
+
+.. _OVERVIEW: ./OVERVIEW.html
+
+===========
+Things TODO
+===========
+
+- The packet.rawstr() method concatenates the old '_d' data attribute
+  from the packet tag, length, and body (body._d, etc.) - it does not
+  reconstruct the packet from its constituent parts. Therefore, mucking
+  with instance attributes (other than _d) does not change the "raw
+  string." I'm thinking that this is a good thing, but not too sure. At
+  the very least this should assume that any attempt to muck with
+  attributes would trigger an exception, which it does not. Anyway,
+  there needs to be some documentation about this one way or another.
+
+- Resolve width of armored output which is a little wider than it looks
+  like it should be. base64 is used, and according to the module docs,
+  it follows rfc1521. OpenPGP uses rfc2045 which obsoletes rfc1521.
+  Evidently fat-armoring is obsolete, but still works.
+    
+- Clarify 5.2.1 w/ respect to private key bindings. The docs say
+  "body of the key packet." In practice, local bindings only verify
+  against the public (primary) key ..or public portion of the private
+  primary key. At this point is just seems as though 5.2.1 should read
+  "the public portion of the key body." Assuming this is so,
+  hash_message() must be updated, since it's just hashing the entire
+  packet body.
+
+- Use 'rb' mode for opening files. Shouldn't hurt text stuff at all.
+
+- Sync sign()/verify() parameters. Specifically, sign() requires an
+  explicit primary key for some signatures while verify() can use the
+  signing key automatically. This should probably always be required
+  explicitly. The aesthetics were something like - it has everything it
+  needs, so why bother with redundancy. The problem is that the
+  convenience in verify() will pass bozo primary key values to
+  hash_message() which must ignore them.
+
+- Maybe get rid of some checks for packet type and just use
+  isinstance(pkt, class). May not work too well for public keys (from
+  which secret and subkeys are derived), but will be a little more
+  solid that just check for the value of a particular attribute. Perhaps
+  pkt.__class__ will work instead.
+
+- keymsg.list_blocks()/block.get_sigs(). 'list' or 'get' - choose one.
+
+- Allow for multiple signature subpackets of any type. This may not be
+  useful in practice but will be nice for testing.
+
+- Clean up inconsistency between OpenPGP.packet.Packet and
+  OpenPGP.message.Msg.Msg - should prolly just put the Msg class
+  directly in OpenPGP.message. Also, since MPIs and S2Ks have their
+  own files in OpenPGP.packet, (??) so too should SignatureSubpacket
+  and there should be individual classes for each one(??).
+
+- (Primary key, user ID) is being reported as a key message.
+  (Primary key) alone should be fine, but the user ID should
+  be a leftover packet if it is not bound to the primary.
+
+- Add test cases for the command line using system(). Do each case
+  as a class so that inputs (actual values, filenames) can be
+  accessed as class variables. The idea is to be able to use the
+  actual test case file to generate documentation for command line
+  usage. This may include the ability to peek into input/output for
+  super coverage.
+
+- Add logging on the lower levels (esp. crypto) so that things like
+  hashes created, creation times, salts, and all automated voodoo
+  can be displayed.
+
+- A plague on all functions which are hidden as attributes. The
+  main stain is _d auto-concatenation. With new key mangling
+  techniques, all packet/message reassembly should be done on
+  the fly with an explicit export() or some such method that
+  returns the data string. This should eliminate all
+  __getattr__() quirks.
+
+- Add rawstr() to packet body instances.
+
+- ?? 2.2 & 2.3 docs both say that __nonzero__() will return True
+  if neither it nor __len__() was defined. Not so. Failed for
+  "if msg:", which caused "KeyError: '__nonzero__'".
+
+- Redo create_Packet() to take (PKT_TYPE, param_dict) and call
+  the appropriate creation function with param_dict. In fact,
+  all create_XXX functions should be ditched and reincarnated as
+  __init__(self, args, kwords) where args[0] can be a string
+  (like for list_pkts()) or a param_dict.
+
+- Use LiteralMsg instead of literal sequences in API.
+
+- Turn keymsg._b_keyid into a function like keymsg.get_key_block().
+
+- Check the strnum functions, see where ord() and chr() can be used
+  in place of other strnum calls.
+
+- Clean up 'raise', use "raise Exception('Nice message.')" instead
+  of "raise Exception, 'Nice message.'"
+
+- Let all the create_XXX() functions accept (args, kwords)
+  and just work with the kwords. There's too many possibilities
+  for the future and order is a pain. See
+  create_PublicKeySessionKeyBody().
+
+- Please oh please use hasattr() instead of "in __dict__" or
+  whatever.
+
+- Get off the fence and decide whether to use "Private" or
+  "Secret" - we gots "secret" keys, "private" messages, and
+  goodness knows what else.
+
+- How about renaming all the packet subclasses to PublicKeyPkt,
+  SignaturePkt, etc.? (thinking about SignedMsg, etc.)
+
+- The indexing method of traversing a string makes too many
+  slices (copies) all over the place. Functions that use a
+  d[idx:] parameter should use (d, idx). This way they can move
+  along the same string d with the idx pointer and taking slices
+  only where they are needed instead of making unnecessary
+  copies of portions of d along the way. Packet parsing with
+  strcalc(func, arg, idx) should not use idx to slice anything,
+  same goes for strcalc_mpi() and strcalc_s2k() which should
+  just use idx. Also look at message parsing with all of its
+  "leftovers" slicing.
+
+- Considering doing something nuts like hashing every packet
+  (sha.new(pkt._d).digest()) to set a 'pkt._id'. This seems a bit
+  more solid than having to refer to the position of a packet
+  in a list and would allow persistence. Otherwise, I'll see
+  how it feels to use id() or hash() for this purpose.
+
+- It might be nice to have '_encrypt_t', 'decrypt_t', '_sign_t', 
+  and 'verify_t' tuples available in public/secret keys/subkeys, 
+  made automatically given their particular MPIs. This would make
+  it a little nicer to go directly to the 'cryption/signature
+  functions that work on integer tuples. This would eliminate
+  stuff like "if RSA, package RSA values to decryption function"
+  in favor of "decrypt using pre-packaged values."
+
+  I like the idea of minimal sig/cryption function parameters
+  (requiring only the key values used in the particular operation)
+  but keeping them that way would make it difficult to organize
+  the kinds of tuples above (which would pretty much have to be
+  a tuple of all available values). Don't see any way around this,
+  so the middle ground between public key organization and the
+  crypto operations on this will look kinda ugly.
+
+- I'd like to switch from returning 1 and 0 for 'true' and 'false'
+  and start returning 0 for 'no error' and whatever else for an
+  error code. In fact, I'd like to subclass int to make constant-ish
+  objects that can be used as such for integer comparison
+  (if pkt.type == SOME_CONSTANT) but also package helpful info::
+
+    err = do_something() # err has an int value (0 == no error)
+    if (err):
+        print err.msg(language)
+
+  This way, information about a particular 'thing' can be bundled
+  closely, codewise.
+
+- Force some kind of symmetry between the signature and cipher
+  functions. Right now, the signature functions handle high, medium
+  and low levels while the cipher functions are stuck on medium.
+  In some ways, because of the quirks involved, it seems like
+  decrypt_symmetric(), decrypt_protected(), and decrypt_key() are
+  on the same level of verify() - but not really.
+
+  I need *a new word* that encapsulates "decrypt and verify" that
+  will handle MDCs, checksums, and whatnot.
+
+  The main conundrum is that it was OK to munge everything into
+  verify() and mash() because all signature operations are
+  confined to signature messages (perhaps they should be moved
+  to the SignedMsg camp?). Because EncryptedMsgs and
+  Public/SecretKeyMsgs all share cipher code, the end result is
+  just a mish mash. Ugly.
+
+- Change docstrings that report `_d` as being a class variable.
+  `_d` should be an instance variable.
+
+- Check that all instances have `_d` (and make sure it's
+  documented).
+
+- Figure out whether to use or ditch the `desc()` method in
+  packets and packet bodies. There are a few of them sitting
+  around.
+
+- The API uses create_literal_sequence() returning a list of
+  literals instead of a literal message. The literal message
+  seems unnecessary for construction purposes (making packets
+  and then running them through find_literal_msg() for the sake
+  of having a message instance). Don't know what there is TODO
+  about this, just wanted to make a note of it.
+
+- Really, separate out all text messages - not only for language
+  support, but also because it'll make a quick search for spelling
+  errors easier.

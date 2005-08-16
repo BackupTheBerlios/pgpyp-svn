@@ -1,0 +1,4 @@
+1. Copy the file to grep for stuff in to tmp_files/.
+2. Do a `sap -l FILENAME` & `sap -m FILENAME` to get an idea of what's needed.
+3. Slice what's needed with `sap -x M[..slice..] -o OUTFILE FILENAME`.
+4. Do a `sap -j OUTFILE` to write the Python hex string to OUTFILE.

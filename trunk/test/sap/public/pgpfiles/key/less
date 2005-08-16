@@ -1,0 +1,85 @@
+Public Key Packet
+ version: 0 type: 6 bodylength: 418
+  version: 4 created: 1057429755
+  algorithm: 17 (DSA (Digital Signature Algorithm) [SCHNEIER])
+  fingerprint: 4D04CE1D89B4995C26F85E620CFC2B6DCC079DF3 ID: 0CFC2B6DCC079DF3
+  DSA 'p' bit count: 1024
+  DSA 'q' bit count: 160
+  DSA 'g' bit count: 1021
+  DSA 'y' bit count: 1023
+Signature Packet
+ version: 0 type: 2 bodylength: 96
+  version: 4 type: 32 Key revocation signature
+  signer: 6246EF319AC13CFC
+  created: 1070924797
+  hash: 2 (SHA-1)
+  public key algorithm: 17 (DSA (Digital Signature Algorithm) [SCHNEIER])
+  unhashed data:
+   Issuer's Key ID (16/0x10): 6246EF319AC13CFC
+  hashed data:
+   Signature Creation Time (2/0x2): 1070924797
+   Reason For Revocation (29/0x1d): (3, 'test foreign revocation')
+  DSA 'r' bit count: 157
+  DSA 's' bit count: 159
+  hash fragment: ['0xc3', '0x11']
+Signature Packet
+ version: 0 type: 2 bodylength: 97
+  version: 4 type: 31 Signature directly on a key
+  signer: 0CFC2B6DCC079DF3
+  created: 1070924670
+  hash: 2 (SHA-1)
+  public key algorithm: 17 (DSA (Digital Signature Algorithm) [SCHNEIER])
+  unhashed data:
+   Issuer's Key ID (16/0x10): 0CFC2B6DCC079DF3
+  hashed data:
+   Signature Creation Time (2/0x2): 1070924670
+   Revocation Key (12/0xc): (128, 17, '6C0D002F4068724B5DCCF7BC6246EF319AC13CFC')
+   Revocable (7/0x7): 0
+  DSA 'r' bit count: 159
+  DSA 's' bit count: 158
+  hash fragment: ['0x6a', '0x1f']
+User ID Packet
+ version: 0 type: 13 bodylength: 38
+  ID: Tester (Test Comment) <test@test.test>
+Signature Packet
+ version: 0 type: 2 bodylength: 91
+  version: 4 type: 19 Positive certification of a User ID and Public Key packet
+  signer: 0CFC2B6DCC079DF3
+  created: 1057429755
+  hash: 2 (SHA-1)
+  public key algorithm: 17 (DSA (Digital Signature Algorithm) [SCHNEIER])
+  unhashed data:
+   Issuer's Key ID (16/0x10): 0CFC2B6DCC079DF3
+  hashed data:
+   Signature Creation Time (2/0x2): 1057429755
+   Preferred Symmetric Algorithms (11/0xb): [9, 8, 7, 3, 2]
+   Preferred Hash Algorithms (21/0x15): [2, 3]
+   Preferred Compression Algorithms (22/0x16): [2, 1]
+   Features (30/0x1e): [1]
+   Key Server Preferences (23/0x17): [128]
+  DSA 'r' bit count: 159
+  DSA 's' bit count: 159
+  hash fragment: ['0x6c', '0xd6']
+Public Subkey Packet
+ version: 0 type: 14 bodylength: 269
+  version: 4 created: 1057429757
+  algorithm: 16 (Elgamal (Encrypt-Only), see [ELGAMAL])
+  fingerprint: 306FBECB7FBC3C9174BD7551CB7D6980A1F2BEF6 ID: CB7D6980A1F2BEF6
+  ElGamal 'p' bit count: 1024
+  ElGamal 'g' bit count: 3
+  ElGamal 'y' bit count: 1021
+Signature Packet
+ version: 0 type: 2 bodylength: 70
+  version: 4 type: 24 Subkey Binding Signature
+  signer: 0CFC2B6DCC079DF3
+  created: 1057429757
+  hash: 2 (SHA-1)
+  public key algorithm: 17 (DSA (Digital Signature Algorithm) [SCHNEIER])
+  unhashed data:
+   Issuer's Key ID (16/0x10): 0CFC2B6DCC079DF3
+  hashed data:
+   Signature Creation Time (2/0x2): 1057429757
+  DSA 'r' bit count: 156
+  DSA 's' bit count: 158
+  hash fragment: ['0xea', '0xa7']
+Pau.

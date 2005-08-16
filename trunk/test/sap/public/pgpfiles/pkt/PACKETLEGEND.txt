@@ -1,0 +1,142 @@
+
+The following packets were taken from DE1.pub.gpg:
+
+    pubkey.A.pkt        pkt 1, type 6, signing key
+    userid.A.pkt        pkt 2, type 13, user id 
+    sig.A.pkt           pkt 3, type 2, signature
+    pubsubkey.A.pkt     pkt 4, type 14, public subkey
+    sigpubsubkey.A.pkt  pkt 5, type 2, signature
+
+    Output from gpg --list-packets DE1.pub.gpg:
+
+    :public key packet:
+            version 4, algo 17, created 1057429755, expires 0
+            pkey[0]: [1024 bits]
+            pkey[1]: [160 bits]
+            pkey[2]: [1021 bits]
+            pkey[3]: [1023 bits]
+    :user ID packet: "Tester (Test Comment) <test@test.test>"
+    :signature packet: algo 17, keyid 0CFC2B6DCC079DF3
+            version 4, created 1057429755, md5len 0, sigclass 13
+            digest algo 2, begin of digest 6c d6
+            hashed subpkt 2 len 4 (sig created 2003-07-05)
+            hashed subpkt 11 len 5 (pref-sym-algos: 9 8 7 3 2)
+            hashed subpkt 21 len 2 (pref-hash-algos: 2 3)
+            hashed subpkt 22 len 2 (pref-zip-algos: 2 1)
+            hashed subpkt 30 len 1 (features: 01)
+            hashed subpkt 23 len 1 (key server preferences: 80)
+            subpkt 16 len 8 (issuer key ID 0CFC2B6DCC079DF3)
+            data: [159 bits]
+            data: [159 bits]
+    :public sub key packet:
+            version 4, algo 16, created 1057429757, expires 0
+            pkey[0]: [1024 bits]
+            pkey[1]: [3 bits]
+            pkey[2]: [1021 bits]
+    :signature packet: algo 17, keyid 0CFC2B6DCC079DF3
+            version 4, created 1057429757, md5len 0, sigclass 18
+            digest algo 2, begin of digest ea a7
+            hashed subpkt 2 len 4 (sig created 2003-07-05)
+            subpkt 16 len 8 (issuer key ID 0CFC2B6DCC079DF3)
+            data: [156 bits]
+            data: [158 bits]
+
+The following packets were taken from DE1.sec.gpg:
+    
+    seckey.A.pkt
+    secsubkey.A.pkt
+
+    :secret key packet:
+            version 4, algo 17, created 1057429755, expires 0
+            skey[0]: [1024 bits]
+            skey[1]: [160 bits]
+            skey[2]: [1021 bits]
+            skey[3]: [1023 bits]
+            iter+salt S2K, algo: 3, SHA1 protection, hash: 2, salt: 17c6b23d31a0e163        protect count: 96
+            protect IV:  16 68 fb ff 97 5d 8a 52
+            encrypted stuff follows
+    :user ID packet: "Tester (Test Comment) <test@test.test>"
+    :signature packet: algo 17, keyid 0CFC2B6DCC079DF3
+            version 4, created 1057429755, md5len 0, sigclass 13
+            digest algo 2, begin of digest 6c d6
+            hashed subpkt 2 len 4 (sig created 2003-07-05)
+            hashed subpkt 11 len 5 (pref-sym-algos: 9 8 7 3 2)
+            hashed subpkt 21 len 2 (pref-hash-algos: 2 3)
+            hashed subpkt 22 len 2 (pref-zip-algos: 2 1)
+            hashed subpkt 30 len 1 (features: 01)
+            hashed subpkt 23 len 1 (key server preferences: 80)
+            subpkt 16 len 8 (issuer key ID 0CFC2B6DCC079DF3)
+            data: [158 bits]
+            data: [159 bits]
+    :secret sub key packet:
+            version 4, algo 16, created 1057429757, expires 0
+            skey[0]: [1024 bits]
+            skey[1]: [3 bits]
+            skey[2]: [1021 bits]
+            iter+salt S2K, algo: 3, SHA1 protection, hash: 2, salt: 17c6b23d31a0e163        protect count: 96
+            protect IV:  47 74 3f 0a f0 5c a5 c8
+            encrypted stuff follows
+    :signature packet: algo 17, keyid 0CFC2B6DCC079DF3
+            version 4, created 1057429757, md5len 0, sigclass 18
+            digest algo 2, begin of digest ea a7
+            hashed subpkt 2 len 4 (sig created 2003-07-05)
+            subpkt 16 len 8 (issuer key ID 0CFC2B6DCC079DF3)
+            data: [159 bits]
+            data: [159 bits]
+
+The following packets were taken from DE1.sec.nopass.gpg:
+
+    seckey.nopass.A.pkt
+    secsubkey.nopass.A.pkt
+
+    :secret key packet:
+            version 4, algo 17, created 1057429755, expires 0
+            skey[0]: [1024 bits]
+            skey[1]: [160 bits]
+            skey[2]: [1021 bits]
+            skey[3]: [1023 bits]
+            skey[4]: [157 bits]
+            checksum: 0a70
+    :user ID packet: "Tester (Test Comment) <test@test.test>"
+    :signature packet: algo 17, keyid 0CFC2B6DCC079DF3
+            version 4, created 1057429755, md5len 0, sigclass 13
+            digest algo 2, begin of digest 6c d6
+            hashed subpkt 2 len 4 (sig created 2003-07-05)
+            hashed subpkt 11 len 5 (pref-sym-algos: 9 8 7 3 2)
+            hashed subpkt 21 len 2 (pref-hash-algos: 2 3)
+            hashed subpkt 22 len 2 (pref-zip-algos: 2 1)
+            hashed subpkt 30 len 1 (features: 01)
+            hashed subpkt 23 len 1 (key server preferences: 80)
+            subpkt 16 len 8 (issuer key ID 0CFC2B6DCC079DF3)
+            data: [158 bits]
+            data: [159 bits]
+    :secret sub key packet:
+            version 4, algo 16, created 1057429757, expires 0
+            skey[0]: [1024 bits]
+            skey[1]: [3 bits]
+            skey[2]: [1021 bits]
+            skey[3]: [248 bits]
+            checksum: 1097
+    :signature packet: algo 17, keyid 0CFC2B6DCC079DF3
+            version 4, created 1057429757, md5len 0, sigclass 18
+            digest algo 2, begin of digest ea a7
+            hashed subpkt 2 len 4 (sig created 2003-07-05)
+            subpkt 16 len 8 (issuer key ID 0CFC2B6DCC079DF3)
+            data: [159 bits]
+            data: [159 bits]
+
+The following packets were taken from sig.DE1.gpg:
+
+    comp.sig.A.pkt
+
+    :compressed packet: algo=1
+    :onepass_sig packet: keyid 0CFC2B6DCC079DF3
+            version 3, sigclass 00, digest 2, pubkey 17, last=1
+    :literal data packet:
+            mode b, created 1057434475, name="cleartext.txt",
+            raw data: 28 bytes
+    :signature packet: algo 17, keyid 0CFC2B6DCC079DF3
+            version 3, created 1057434475, md5len 5, sigclass 00
+            digest algo 2, begin of digest 26 b0
+            data: [159 bits]
+            data: [159 bits]

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+EPYDOC="/usr/bin/epydoc"
+BUILDHTML="/usr/local/src/python/docutils/tools/buildhtml.py"
+PACKAGE_TOP="/home/p2/dev/openpgp" # doc/ and src/openpgp/ location
+DOC_DIR="/home/p2/tmp/openpgp_doc" # where to write docs
+
+SUPPORT_DOC_DIR="$PACKAGE_TOP/doc"
+SRC_DIR="$PACKAGE_TOP/src/openpgp"
+
+mkdir $DOC_DIR
+
+$EPYDOC --html -o $DOC_DIR -n OpenPGP -c green \
+        --docformat=restructuredtext \
+        $SRC_DIR
+
+cp -r $SUPPORT_DOC_DIR/*.txt $DOC_DIR/
+
+cd $DOC_DIR
+
+$BUILDHTML -g -s -d -t \
+           --toc-entry-backlinks \
+           --toc-top-backlinks \
+           --footnote-backlinks \
+           ./
+
